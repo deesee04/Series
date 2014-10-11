@@ -35,5 +35,12 @@ from supybot.test import *
 class SeriesTestCase(PluginTestCase):
     plugins = ('Series',)
 
+    def testSeries(self):
+        conf.supybot.plugins.Soccer.disableANSI.setValue('True')
+        # ep, movie, tv
+        self.assertRegexp('ep Breaking Bad', 'Breaking Bad')
+        self.assertRegexp('movie Batman', 'Batman')
+        self.assertRegexp('tv Breaking Bad', 'Breaking Bad')
+
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
