@@ -41,7 +41,13 @@ from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
-
+try:
+    from supybot.i18n import PluginInternationalization
+    _ = PluginInternationalization('Series')
+except ImportError:
+    # Placeholder that allows to run the plugin on a bot
+    # without the i18n module
+    _ = lambda x:x
 
 class Series(callbacks.Plugin):
     """This plugin uses returns data on tv shows. It got two commands, tv and ep.
