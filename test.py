@@ -38,8 +38,8 @@ class SeriesTestCase(PluginTestCase):
     def testSeries(self):
         # ep, movie, tv
         self.assertRegexp('ep Breaking Bad', 'Breaking Bad')
-        self.assertRegexp('movie Batman', 'Batman')
-        self.assertRegexp('tv Breaking Bad', 'Breaking Bad')
+        self.assertNotError('movie Batman')
+        self.assertNotError('tv Breaking Bad')
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
