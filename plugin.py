@@ -41,6 +41,8 @@ from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
+import urllib
+import json
 try:
     from supybot.i18n import PluginInternationalization
     _ = PluginInternationalization('Series')
@@ -122,15 +124,37 @@ class Series(callbacks.Plugin):
         Ex: Burn Notice
         """
 
-        url = "http://www.episodeworld.com/botsearch/%s" % (utils.web.urlquote(opttitle))
-        html = self._httpget(url)
-        if not url:
-            irc.reply("ERROR fetching {0}".format(url))
-            return
-        # process what we get back.
-        epitems = html.split('<br>\n')
-        # output
-        irc.reply("{0} :: {1} :: {2}".format(epitems[0], epitems[1], epitems[2]))
+        url = "http://api.tvmaze.com/singlesearch/shows?q=" + urllib.quote_plus(opttitle)
+
+        response = urllib.urlopen(url)
+
+        data = json.loads(response.read())
+
+        show_name = data['name']
+
+        next_url = data['_links']['nextepisode']['href']
+        prev_url = data['_links']['previousepisode']['href']
+
+        response_next = urllib.urlopen(next_url)
+        data_next = json.loads(response_next.read())
+
+        next_name = data_next['name']
+        next_seas = data_next['season']
+        next_num = data_next['number']
+        next_date = data_next['airdate']
+
+        response_prev = urllib.urlopen(prev_url)
+        data_prev = json.loads(response_prev.read())
+
+        previous_name = data_prev['name']
+        previous_seas = data_prev['season']
+        previous_num = data_prev['number']
+        previous_date = data_prev['airdate']
+
+
+        irc.reply(show_name)
+        irc.reply("Previous: " + previous_date + " | S" + str(previous_seas) + "E" + str(previous_num) + " | " + previous_name)
+        irc.reply("Next: " + next_date + " | S" + str(next_seas) + "E" + str(next_num) + " | " + next_name)
 
     ep = wrap(ep, ['text'])
 
