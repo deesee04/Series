@@ -1,7 +1,10 @@
 [![Build Status](https://travis-ci.org/reticulatingspline/Series.svg?branch=master)](https://travis-ci.org/reticulatingspline/Series)
 
 // dc
+
 // some things were broken, so i swapped some services and made the functions do what they said they would do. nothing fancy. 
+
+// TODO: replace tv function
 
 # Supybot / Limnoria plugin for displaying TV / movie / IMDB information
 
