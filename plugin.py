@@ -165,102 +165,44 @@ class Series(callbacks.Plugin):
         Ex: Burn Notice
         """
 
-        url = "http://services.tvrage.com/tools/quickinfo.php?show=%s" % (utils.web.urlquote(opttitle))
-        html = self._httpget(url)
-        if not url:
-            irc.reply("ERROR fetching {0}".format(url))
-            return
+        url = "http://api.tvmaze.com/singlesearch/shows?q=" + urllib.quote_plus(opttitle)
 
-        if 'No Show Results Were Found' in html:
-           irc.reply("Sorry, I didn't find anything for '{0}' on tvrage.com".format(opttitle))
-           return
+        response = urllib.urlopen(url)
 
-        # Remove <pre> at the start
-        html = html[5:]
-        html = html.splitlines()
-        """
-        Example of what is returned (after removing "<pre>")
+        data = json.loads(response.read())
 
-        Show ID@15343
-        Show Name@Stargate Universe
-        Show URL@http://www.tvrage.com/Stargate_Universe
-        Premiered@2009
-        Started@Oct/02/2009
-        Ended@
-        Latest Episode@01x18^Subversion^May/21/2010
-        Next Episode@01x19^Incursion (1)^Jun/04/2010
-        RFC3339@2010-06-04T21:00:00-4:00
-        GMT+0 NODST@1275692400
-        Country@USA
-        Status@New Series
-        Classification@Scripted
-        Genres@Sci-Fi
-        Network@Syfy
-        Airtime@Friday at 09:00 pm
-        Runtime@60
-        """
-        """Different possible replies:
+        show_name = data['name']
 
-        No show with that name found (what. this shouldn't really happen).
+        show_status = data['status']
 
-        [ Showname ] - Stargate Universe [ Status ] - New Series
-        [ Next Ep ] - 01x19^Incursion (1)^Jun/04/2010 [ Airtime ] - Friday at 09:00 pm
-        [ Genres ] - Sci-Fi [ URL ] - http://www.tvrage.com/Stargate_Universe
+        show_url = data['url']
 
-        [ Showname ] - Chuck [ Status ] - Returning Series
-        [ Genres ] - Action | Comedy | Drama [ URL ] - http://www.tvrage.com/Chuck
+        show_runtime= data['runtime']
 
-        [ Showname ] - Star Trek: The Next Generation [ Status ] - Canceled/Ended
-        [ Started ] - Sep/28/1987 [ Ended ] - May/23/1994
-        [ Genres ] - Action | Adventure | Sci-Fi [ URL ] - http://www.tvrage.com/Star_Trek-The_Next_Generation
+        show_schedule = ', '.join(data['schedule']['days']) + " @ " + data['schedule']['time']
 
-        """
-        dict = {}
-        for line in html:
-            line = line.strip() # Just to be sure.
-            head, sep, tail = line.partition("@")
-            dict[head] = tail
-        # dict should at this point contain "Show Name": "Stargate Universe" etc etc.
-        # Since there is a bit of info we try to spread it over 3 lines.
-        firstline = ""
-        if("Show Name" in dict):
-            firstline += " [ Showname ] - " + dict["Show Name"]
-        else:
-            irc.reply("No show with that name found (what. this shouldn't really happen).")
-            return
-        if("Status" in dict):
-            firstline += " [ Status ] - " + dict["Status"]
-        irc.reply(firstline.strip()) # Uses strip just to be consistent with the other lines.
+        show_genre = ''.join(data['genres'])
 
-        # Note: second line never happens for shows that are still running, but next date is unknown.
-        secline = ""
-        if("Next Episode" in dict):
-            secline += " [ Next Ep ] - " + dict["Next Episode"].replace('^', ' - ')
-            # No point in adding airtime if we don't know what date the episode will be anyway.
-            if("Airtime" in dict):
-                secline += " [ Airtime ] - " + dict["Airtime"]
-        elif("Started" in dict and "Ended" in dict):
-            # Also want to make sure we actually have an enddate.
-            # Checking for startsdate aswell, for fun.
-            if(dict["Started"] and dict["Ended"]):
-                secline += " [ Started ] - " + dict["Started"]
-                secline += " [ Ended ] - " + dict["Ended"]
-        # if("Country" in dict):
-        #     secline += " [ Country ] - " + dict["Country"]
-        if(secline):
-            irc.reply(secline.strip()) # As we are not sure what line comes first all have a space in front of them.
+        show_network = data['network']['name']
 
-        thirdline = ""
-        if("Genres" in dict):
-            thirdline += " [ Genres ] - " + dict["Genres"]
-        # if("Classification" in dict):
-        #     thirdline += " [ Class ] - " + dict["Classification"]
-        if("Show URL" in dict):
-            thirdline += " [ URL ] - " + dict["Show URL"]
-        # if("Network" in dict):
-        #     thirdline += " [ Network ] - " + dict["Network"]
-        if(thirdline):
-            irc.reply(thirdline.strip())
+        show_summary = data['summary']
+
+        next_url = data['_links']['nextepisode']['href']
+
+        response_next = urllib.urlopen(next_url)
+        data_next = json.loads(response_next.read())
+
+        next_name = data_next['name']
+        next_seas = data_next['season']
+        next_num = data_next['number']
+        next_date = data_next['airdate']
+
+        irc.reply(show_name + " (" + show_genre + ") " + "(" + show_status + ")")
+        irc.reply(show_url)
+        irc.reply("Schedule: " + show_schedule + " on " + show_network + " (" + str(show_runtime) + " minutes)")
+        irc.reply("Next: " + next_date + " | S" + str(next_seas) + "E" + str(next_num) + " | " + next_name)
+        irc.reply(show_summary)
+
     tv = wrap(tv, ['text'])
 
 Class = Series
